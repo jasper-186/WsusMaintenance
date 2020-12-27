@@ -1,0 +1,200 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{0E82815C-CCD9-4C04-A329-BA1DF2013FA3}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>WSUSMaintenance</RootNamespace>
+    <AssemblyName>WSUSMaintenance</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.UpdateServices.Administration, Version=3.1.6001.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>WSUSLibraries\x64\Microsoft.UpdateServices.Administration.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.OracleClient" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Transactions" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DbStep\broken\CleanupIntermediateFileStatesOnStartup.cs" />
+    <Compile Include="DbStep\FixCatalogSyncStates.cs" />
+    <Compile Include="DbStep\CompressUpdates.cs" />
+    <Compile Include="DbStep\CleanupUnneededContentFiles.cs" />
+    <Compile Include="DbStep\CleanupObsoleteComputers.cs" />
+    <Compile Include="DbStep\DeclineSupersededUpdates.cs" />
+    <Compile Include="DbStep\DeclineExpiredUpdates.cs" />
+    <Compile Include="Model\WsusEmailSettings.cs" />
+    <Compile Include="NerdleConfigs\Database.cs" />
+    <Compile Include="NerdleConfigs\SmtpRecipient.cs" />
+    <Compile Include="NerdleConfigs\WsusMaintenanceConfiguration.cs" />
+    <Compile Include="NerdleConfigs\SmtpConfiguration.cs" />
+    <Compile Include="NerdleConfigs\SmtpRecipientCollection.cs" />
+    <Compile Include="OtherStep\SendEmail.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="DbStep\BackupDatabase.cs" />
+    <Compile Include="WsusStep\CleanupObsoleteComputers.cs" />
+    <Compile Include="WsusStep\CompressUpdates.cs" />
+    <Compile Include="WsusStep\DeclineExpiredUpdatesWSUS.cs" />
+    <Compile Include="WsusStep\CleanupObsoleteUpdates.cs" />
+    <Compile Include="WsusStep\CleanupUnneededContentFiles.cs" />
+    <Compile Include="WsusStep\DeclineExpiredUpdates.cs" />
+    <Compile Include="WsusStep\DeclineSupersededUpdates.cs" />
+    <Compile Include="DbStep\CleanupObsoleteUpdates.cs" />
+    <Compile Include="DbStep\OptimizeDatabase.cs" />
+    <Compile Include="DbStep\CustomIndexes.cs" />
+    <Compile Include="IStep.cs" />
+    <Compile Include="Result.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="WsusDBMaintenance.sql" />
+    <Content Include="WSUSLibraries\x64\Microsoft.UpdateServices.AdminDataAccessProxy.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x64\Microsoft.UpdateServices.Administration.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x64\Microsoft.UpdateServices.BaseApi.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x64\Microsoft.UpdateServices.ClientServicing.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x64\Microsoft.UpdateServices.CoreCommon.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x64\Microsoft.UpdateServices.DBlayer.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x64\Microsoft.UpdateServices.StringResources.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x64\Microsoft.UpdateServices.StringResources.resources.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x64\Microsoft.UpdateServices.Utils.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x64\SusNativeCommon.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\Microsoft.UpdateServices.AdminDataAccessProxy.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\Microsoft.UpdateServices.Administration.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\Microsoft.UpdateServices.BaseApi.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\Microsoft.UpdateServices.ClientServicing.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\Microsoft.UpdateServices.CoreCommon.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\Microsoft.UpdateServices.DBlayer.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\Microsoft.UpdateServices.StringResources.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\Microsoft.UpdateServices.StringResources.resources.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\Microsoft.UpdateServices.Utils.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="WSUSLibraries\x86\SusNativeCommon.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MailKit">
+      <Version>2.10.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Data.SqlClient">
+      <Version>2.1.1</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Identity.Client">
+      <Version>4.24.0</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects">
+      <Version>161.44091.28</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Windows.SDK.Contracts">
+      <Version>10.0.19041.1</Version>
+    </PackageReference>
+    <PackageReference Include="Nerdle.AutoConfig">
+      <Version>1.5.0</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>12.0.3</Version>
+    </PackageReference>
+    <PackageReference Include="Serilog">
+      <Version>2.10.0</Version>
+    </PackageReference>
+    <PackageReference Include="Serilog.Sinks.Console">
+      <Version>3.1.1</Version>
+    </PackageReference>
+    <PackageReference Include="Serilog.Sinks.File">
+      <Version>4.1.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Configuration.ConfigurationManager">
+      <Version>5.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Runtime.WindowsRuntime.UI.Xaml">
+      <Version>4.7.0</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Loggers\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
