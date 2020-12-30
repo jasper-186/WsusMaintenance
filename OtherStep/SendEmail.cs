@@ -14,7 +14,7 @@ using WSUSMaintenance.Model;
 
 namespace WSUSMaintenance.OtherStep
 {
-    public class SendEmail 
+    public class SendEmail
     {
         // Should probably be static in the future
         public void SendCompletionEmail(WsusMaintenanceConfiguration config, string logFile)
@@ -34,7 +34,7 @@ namespace WSUSMaintenance.OtherStep
             }
 
             // Put Together Email Body
-            var emailBody = System.IO.File.ReadAllText(logFile,Encoding.UTF8);
+            var emailBody = System.IO.File.ReadAllText(logFile, Encoding.UTF8);
             var mailList = new List<MimeMessage>();
             foreach (var recipient in emailSettings.Recipients)
             {
@@ -62,13 +62,14 @@ namespace WSUSMaintenance.OtherStep
                 smtpClient.Connect(emailSettings.SmtpHostName, emailSettings.SmtpPort, emailSettings.SmtpUseSsl);
                 if (emailSettings.SmtpServerRequireAuthentication)
                 {
-                    smtpClient.Authenticate(emailSettings.SmtpUserName, "password");
+                    smtpClient.Authenticate(emailSettings.SmtpUserName, emailSettings.SmtpPassword);
                 }
 
                 foreach (var mailMessage in mailList)
                 {
                     smtpClient.Send(mailMessage);
                 }
+
                 smtpClient.Disconnect(true);
             }
 
@@ -187,6 +188,7 @@ namespace WSUSMaintenance.OtherStep
             smtpEmail.SmtpServerRequireAuthentication = config?.Smtp?.SmtpRequiresAuthentication ?? smtpEmail.SmtpServerRequireAuthentication;
             smtpEmail.SmtpUserMailAddress = config?.Smtp?.SmtpFromOverride ?? smtpEmail.SmtpUserMailAddress;
             smtpEmail.SmtpUserName = config?.Smtp?.SmtpAuthUserName ?? smtpEmail.SmtpUserName;
+            smtpEmail.SmtpPassword = config?.Smtp?.SmtpAuthPassword;
 
             if ((config?.Smtp?.SmtpPort >> 0) > 0)
             {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,8 +15,8 @@ namespace WSUSMaintenance.Model
         public string SmtpUserDisplayName { get; set; }
         public string SmtpUserMailAddress { get; set; }
         public string SmtpUserName { get; set; }
+        public string SmtpPassword { get; set; }
         public bool SmtpUseSsl { get; set; } = true;
         public List<string> Recipients { get; set; } = new List<string>();
-
     }
 }
