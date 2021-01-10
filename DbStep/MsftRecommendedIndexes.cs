@@ -8,7 +8,9 @@ using WSUSMaintenance.NerdleConfigs;
 
 namespace WSUSMaintenance.DbStep
 {
-    public class CustomIndexes : IStep
+    // Indexes retrieved from 
+    // https://docs.microsoft.com/en-us/troubleshoot/mem/configmgr/wsus-maintenance-guide#create-custom-indexes
+    public class MsftRecommendedIndexes : IStep
     {
         private readonly string SqlCommand = @"
             -- Create custom index in tbLocalizedPropertyForRevision

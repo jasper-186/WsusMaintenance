@@ -18,15 +18,20 @@ namespace WSUSMaintenance
             var steps = new IStep[]
             {
                 new BackupDatabase(),
-                new CustomIndexes(),
-                new OptimizeDatabase(),
+                new MsftRecommendedIndexes(),
+                new InstallFullTextSearch(),
                 new DeclineSupersededUpdates(),
                 new DeclineExpiredUpdates(),
+                new DeclineItaniumUpdates(),
+                new DeclinePreviewUpdates(),
+                new DeclineSurfaceUpdates(),
+                new DeclineLanguageFeatureonDemandUpdates(),
                 new CleanupObsoleteUpdates(),
                 new CleanupObsoleteComputers(),
-                new CompressUpdates(),
                 new CleanupUnneededContentFiles(),
-              };
+                new CompressUpdates(),
+                new OptimizeDatabase(),
+            };
 
             var wsusConfig = Nerdle.AutoConfig.AutoConfig.Map<NerdleConfigs.WsusMaintenanceConfiguration>();
             // get temp File for Log
@@ -38,10 +43,12 @@ namespace WSUSMaintenance
             {
                 try
                 {
+                    log.Information("Starting Wsus Maintence");
+
                     for (int i = 0; i < steps.Length; i++)
                     {
                         log.Information("Checking Step {0}/{1} - {2}", (i + 1), steps.Length, steps[i].GetType().Name);
-                      
+
                         // Set Config including Db Connection
                         steps[i].SetConfig(wsusConfig);
 
@@ -82,7 +89,7 @@ namespace WSUSMaintenance
                 }
                 catch (Exception e)
                 {
-                    log.Error(e,"Error Running Wsus Maintenance");
+                    log.Error(e, "Error Running Wsus Maintenance");
                 }
 
                 // Close the logger, so we can re-open the file in SendCompletionEmail
@@ -90,7 +97,7 @@ namespace WSUSMaintenance
 
             // Send Completion Email
             var Email = new SendEmail();
-            Email.SendCompletionEmail(wsusConfig, tempFile);          
+            Email.SendCompletionEmail(wsusConfig, tempFile);
         }
     }
 }

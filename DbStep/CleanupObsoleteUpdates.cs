@@ -63,14 +63,23 @@ namespace WSUSMaintenance.DbStep
 
                     for (var i = 0; i < ObsoleteUpdateList.Count; i++)
                     {
-                        var update = ObsoleteUpdateList[i];
-                        WriteLine("Deleting {0} - {1}/{2}", update, (i + 1), ObsoleteUpdateList.Count);
-                        var deleteCmd = dbconnection.CreateCommand();
-                        deleteCmd.CommandText = "EXEC spDeleteUpdate @localUpdateID";
-                        deleteCmd.CommandTimeout = 0;
-                        deleteCmd.Parameters.Add(new SqlParameter("@localUpdateID", update));
-                        //deleteCmd.CommandType = System.Data.CommandType.StoredProcedure;
-                        deleteCmd.ExecuteNonQuery();
+                        try
+                        {
+                            var update = ObsoleteUpdateList[i];
+                            WriteLine("Deleting Obsolete Update {0} - {1}/{2}", update, (i + 1), ObsoleteUpdateList.Count);
+                            var deleteCmd = dbconnection.CreateCommand();
+                            deleteCmd.CommandText = "EXEC spDeleteUpdate @localUpdateID";
+
+                            // it shouldn't take 2 Hours to delete an update, so its probaby deadlocked somewhere
+                            deleteCmd.CommandTimeout = (int)TimeSpan.FromHours(2).TotalSeconds;
+                            deleteCmd.Parameters.Add(new SqlParameter("@localUpdateID", update));
+                            //deleteCmd.CommandType = System.Data.CommandType.StoredProcedure;
+                            deleteCmd.ExecuteNonQuery();
+                        }
+                        catch (TimeoutException)
+                        {
+                            WriteLine("Failed to Delete Update {0} - 2 Hour Timeout Expired; Moving on", ObsoleteUpdateList[i]);
+                        }
                     }
                 }
                 return new Result(true, new Dictionary<ResultMessageType, IList<string>>());

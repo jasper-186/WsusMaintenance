@@ -12,6 +12,7 @@ namespace WSUSMaintenance.DbStep
     {
 
         private WsusMaintenanceConfiguration wsusConfig { get; set; }
+        private int ShrinkFreeSpaceThreashold = 20;
 
         public void SetConfig(WsusMaintenanceConfiguration config)
         {
@@ -29,7 +30,6 @@ namespace WSUSMaintenance.DbStep
 
             try
             {
-                WriteLine("Optimizing Database with Script - Stage 01/03 - Rebuild Indexes");
                 using (var dbconnection = new SqlConnection(wsusConfig.Database.ConnectionString))
                 {
                     dbconnection.InfoMessage += (sender, e) =>
@@ -38,22 +38,22 @@ namespace WSUSMaintenance.DbStep
                     };
 
                     dbconnection.Open();
+
+                    WriteLine("Optimizing Database with Script - Stage 01/03 - Shrink Database to {0}% Free Space", ShrinkFreeSpaceThreashold);
                     var cmd = dbconnection.CreateCommand();
+                    cmd.CommandText = string.Format(ShrinkDatabaseSqlCommand, ShrinkFreeSpaceThreashold);
+                    cmd.CommandTimeout = 0;
+                    cmd.ExecuteNonQuery();
+
+                    WriteLine("Optimizing Database with Script - Stage 02/03 - Rebuild Indexes");
+                    cmd = dbconnection.CreateCommand();
                     cmd.CommandText = RebuildIndexesSqlCommand;
                     cmd.CommandTimeout = 0;
                     cmd.ExecuteNonQuery();
 
-                    WriteLine("Optimizing Database with Script - Stage 02/03 - Update Statistics");
-
+                    WriteLine("Optimizing Database with Script - Stage 03/03 - Update Statistics");
                     cmd = dbconnection.CreateCommand();
                     cmd.CommandText = UpdateStatisticsSqlCommand;
-                    cmd.CommandTimeout = 0;
-                    cmd.ExecuteNonQuery();
-
-                    WriteLine("Optimizing Database with Script - Stage 03/03 - Shrink Database");
-
-                    cmd = dbconnection.CreateCommand();
-                    cmd.CommandText = ShrinkDatabaseSqlCommand;
                     cmd.CommandTimeout = 0;
                     cmd.ExecuteNonQuery();
 
@@ -104,7 +104,7 @@ SET NOCOUNT ON;
  
 -- Rebuild or reorganize indexes based on their fragmentation levels 
 DECLARE @work_to_do TABLE ( 
-    objectid int 
+    objectid int INDEX WTD_OI 
     , indexid int 
     , pagedensity float 
     , fragmentation float 
@@ -218,6 +218,6 @@ PRINT 'Done updating statistics.' + convert(nvarchar, getdate(), 121)
 --GO
 ";
         // Shrink the Database, Allow 20% Free Space
-        private readonly string ShrinkDatabaseSqlCommand = @"DBCC SHRINKDATABASE (SUSDB, 20);";
+        private readonly string ShrinkDatabaseSqlCommand = @"DBCC SHRINKDATABASE (SUSDB, {0});";
     }
 }

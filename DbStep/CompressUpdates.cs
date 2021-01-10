@@ -29,6 +29,7 @@ namespace WSUSMaintenance.DbStep
             try
             {
                 WriteLine("Compress Updates");
+                WriteLine("Please Note; due to Update depencies this may take a couple rounds");
                 using (var dbconnection = new SqlConnection(wsusConfig.Database.ConnectionString))
                 {
                     dbconnection.InfoMessage += (sender, e) =>
@@ -37,38 +38,31 @@ namespace WSUSMaintenance.DbStep
                     };
                     dbconnection.Open();
 
-                    var cmd = dbconnection.CreateCommand();
-                    cmd.CommandText = "EXEC spGetUpdatesToCompress";
-                    cmd.CommandTimeout = 0;
-                    //  cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                    var compressUpdateList = new List<long>();
-                    using (var reader = cmd.ExecuteReader())
+                    var compressUpdateList = GetCompressableUpdates(dbconnection);
+                    int round = 1;
+                    while (compressUpdateList.Count > 0)
                     {
-                        while (reader.Read())
+                        var roundCount = compressUpdateList.Count();
+                        WriteLine("Compressing {0} Updates - Round {1}", roundCount, round);
+                        for (var i = 0; i < compressUpdateList.Count; i++)
                         {
-
-                            if (long.TryParse(reader[0].ToString(), out long temp))
-                            {
-                                compressUpdateList.Add(temp);
-                            }
-                            else
-                            {
-                                WriteLine("Failed to Parse {0} into long", reader[0]);
-                            }
+                            var update = compressUpdateList.Dequeue();
+                            WriteLine("Compressing {0} - {1}/{2} - Round {3}", update, i + 1, roundCount, round);
+                            var compressCmd = dbconnection.CreateCommand();
+                            compressCmd.CommandText = "EXEC spCompressUpdate @localUpdateID";
+                            compressCmd.CommandTimeout = 0;
+                            compressCmd.Parameters.Add(new SqlParameter("@localUpdateID", update));
+                            compressCmd.ExecuteNonQuery();
                         }
-                    }
 
-                    WriteLine("Compressing {0} Updates", compressUpdateList.Count);
+                        if (round > 10)
+                        {
+                            WriteLine($"CompressUpdates - Round Count Excessive; Bailing to prevent non-breaking loop");
+                            break;
+                        }
 
-                    for (var i = 0; i < compressUpdateList.Count; i++)
-                    {
-                        var update = compressUpdateList[i];
-                        WriteLine("Compressing {0} - {1}/{2}", update, i + 1, compressUpdateList.Count);
-                        var compressCmd = dbconnection.CreateCommand();
-                        compressCmd.CommandText = "EXEC spCompressUpdate @localUpdateID";
-                        compressCmd.CommandTimeout = 0;
-                        compressCmd.Parameters.Add(new SqlParameter("@localUpdateID", update));
-                        compressCmd.ExecuteNonQuery();
+                        compressUpdateList = GetCompressableUpdates(dbconnection);
+                        round++;
                     }
                 }
                 return new Result(true, new Dictionary<ResultMessageType, IList<string>>());
@@ -82,6 +76,35 @@ namespace WSUSMaintenance.DbStep
             }
         }
         public event WriteLogLineHandler WriteLog;
+
+
+        private Queue<long> GetCompressableUpdates(SqlConnection connection)
+        {
+            var compressUpdateList = new Queue<long>();
+
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = "EXEC spGetUpdatesToCompress";
+            cmd.CommandTimeout = 0;
+            //  cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+
+                    if (long.TryParse(reader[0].ToString(), out long temp))
+                    {
+                        compressUpdateList.Enqueue(temp);
+                    }
+                    else
+                    {
+                        WriteLine("Failed to Parse {0} into long", reader[0]);
+                    }
+                }
+            }
+
+            return compressUpdateList;
+        }
+
 
         private void WriteLine(string format, params object[] values)
         {

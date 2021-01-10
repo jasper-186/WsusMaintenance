@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WSUSMaintenance.NerdleConfigs;
 using WSUSMaintenance.Model;
+using MailKit;
 
 namespace WSUSMaintenance.OtherStep
 {
@@ -57,20 +58,28 @@ namespace WSUSMaintenance.OtherStep
                 return;
             }
 
-            using (var smtpClient = new SmtpClient())
+            using (var smtpClient = new SmtpClient(new ProtocolLogger("smtp.log")))
             {
-                smtpClient.Connect(emailSettings.SmtpHostName, emailSettings.SmtpPort, emailSettings.SmtpUseSsl);
-                if (emailSettings.SmtpServerRequireAuthentication)
+                try
                 {
-                    smtpClient.Authenticate(emailSettings.SmtpUserName, emailSettings.SmtpPassword);
-                }
+                    smtpClient.Connect(emailSettings.SmtpHostName, emailSettings.SmtpPort, emailSettings.SmtpUseSsl);
+                    if (emailSettings.SmtpServerRequireAuthentication)
+                    {
+                        smtpClient.AuthenticationMechanisms.Remove("XOAUTH2");
+                        smtpClient.Authenticate(emailSettings.SmtpUserName, emailSettings.SmtpPassword);
+                    }
 
-                foreach (var mailMessage in mailList)
+                    foreach (var mailMessage in mailList)
+                    {
+                        smtpClient.Send(mailMessage);
+                    }
+
+                    smtpClient.Disconnect(true);
+                }
+                catch (MailKit.Net.Smtp.SmtpProtocolException e)
                 {
-                    smtpClient.Send(mailMessage);
-                }
 
-                smtpClient.Disconnect(true);
+                }
             }
 
             return;

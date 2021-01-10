@@ -60,6 +60,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DbStep\broken\CleanupIntermediateFileStatesOnStartup.cs" />
+    <Compile Include="DbStep\DeclineSurfaceUpdates.cs" />
+    <Compile Include="DbStep\DeclinePreviewUpdates.cs" />
+    <Compile Include="DbStep\DeclineLanguageFeatureonDemandUpdates.cs" />
+    <Compile Include="DbStep\InstallFullTextSearch.cs" />
+    <Compile Include="DbStep\DeclineItaniumUpdates.cs" />
     <Compile Include="DbStep\FixCatalogSyncStates.cs" />
     <Compile Include="DbStep\CompressUpdates.cs" />
     <Compile Include="DbStep\CleanupUnneededContentFiles.cs" />
@@ -85,7 +90,7 @@
     <Compile Include="WsusStep\DeclineSupersededUpdates.cs" />
     <Compile Include="DbStep\CleanupObsoleteUpdates.cs" />
     <Compile Include="DbStep\OptimizeDatabase.cs" />
-    <Compile Include="DbStep\CustomIndexes.cs" />
+    <Compile Include="DbStep\MsftRecommendedIndexes.cs" />
     <Compile Include="IStep.cs" />
     <Compile Include="Result.cs" />
   </ItemGroup>
