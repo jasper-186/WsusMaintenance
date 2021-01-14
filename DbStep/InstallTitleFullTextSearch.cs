@@ -13,7 +13,7 @@ namespace WSUSMaintenance.DbStep
     //      Decline Surface Updates
 
     // Head up this is a bit Janky, because you cant create a Full text index without the name of the primary keys index
-    public class InstallFullTextSearch : IStep
+    public class InstallTitleFullTextSearch : IStep
     {
 
         private readonly string isFullTextInstalledSqlCommand = @"SELECT FULLTEXTSERVICEPROPERTY('IsFullTextInstalled')";
@@ -29,13 +29,13 @@ namespace WSUSMaintenance.DbStep
                                                                     inner join sys.index_columns ic  ON i.object_id = ic.object_id AND i.index_id = ic.index_id
                                                                     inner join sys.columns c ON ic.object_id = c.object_id AND c.column_id = ic.column_id
                                                                 WHERE i.is_primary_key = 1
-                                                                    and i.object_ID = OBJECT_ID('dbo.tbXml');";
+                                                                    and i.object_ID = OBJECT_ID('dbo.tbPreComputedLocalizedProperty');";
 
 
 
         private readonly string createFullTextSqlCommandTemplate = @"
-	                                    CREATE FULLTEXT INDEX ON [dbo].[tbXml](
-	                                    [RootElementXml] LANGUAGE 'English')
+	                                    CREATE FULLTEXT INDEX ON [dbo].[tbPreComputedLocalizedProperty](
+	                                    [Title] LANGUAGE 'English')
 	                                    KEY INDEX {0} ON ({1}, FILEGROUP [PRIMARY])
 	                                    WITH (CHANGE_TRACKING = AUTO, STOPLIST = SYSTEM);";
 
@@ -46,8 +46,8 @@ namespace WSUSMaintenance.DbStep
                     ON c.object_id = fic.object_id 
                     AND c.column_id = fic.column_id
                 WHERE 
-	                c.object_id = OBJECT_ID('dbo.tbxml')
-	                AND c.name = 'RootElementXml'
+	                c.object_id = OBJECT_ID('dbo.tbPreComputedLocalizedProperty')
+	                AND c.name = 'Title'
             ";
 
 
@@ -124,7 +124,7 @@ namespace WSUSMaintenance.DbStep
 
                     if (string.IsNullOrWhiteSpace(primaryKeyName))
                     {
-                        messages.Add(ResultMessageType.Error, new List<string>() { "Failed to retrieve the primary key of tbXml" });
+                        messages.Add(ResultMessageType.Error, new List<string>() { "Failed to retrieve the primary key of tbPreComputedLocalizedProperty" });
                         return new Result(false, messages);
                     }
 

@@ -45,10 +45,10 @@ namespace WSUSMaintenance.DbStep
                                         SELECT 
 	                                        Distinct
 	                                        U.[UpdateID]     
-                                        FROM [dbo].[tbXml] x
-                                        JOIN [dbo].[tbRevision] R ON x.RevisionID = R.RevisionID
-                                        JOIN [dbo].[tbUpdate] U ON U.LocalUpdateID = R.LocalUpdateID
-                                        where 
+                                        FROM [dbo].[tbPreComputedLocalizedProperty] x
+                                        JOIN [dbo].[tbUpdate] U ON U.UpdateID = X.UpdateID
+                                        JOIN [dbo].[tbRevision] R ON U.LocalUpdateID = R.LocalUpdateID AND  X.RevisionID = R.RevisionID
+									     where 
                                         -- If its hidden, its already declined
                                         U.IsHidden = 0
                                         AND
@@ -102,14 +102,19 @@ namespace WSUSMaintenance.DbStep
             catch (Exception e)
             {
                 throw;
-                var messages = new Dictionary<ResultMessageType, IList<string>>();
-                messages.Add(ResultMessageType.Error, new List<string>() { e.Message, e.InnerException?.Message });
-                return new Result(false, messages);
+                //var messages = new Dictionary<ResultMessageType, IList<string>>();
+                //messages.Add(ResultMessageType.Error, new List<string>() { e.Message, e.InnerException?.Message });
+                //return new Result(false, messages);
             }
         }
 
         public bool ShouldRun()
         {
+            if (!wsusConfig.Steps.DatabaseSteps["DeclinePreviewUpdates"])
+            {
+                return false;
+            }
+
             using (var dbconnection = new SqlConnection(wsusConfig.Database.ConnectionString))
             {
                 dbconnection.InfoMessage += (sender, e) =>
@@ -122,10 +127,10 @@ namespace WSUSMaintenance.DbStep
                 cmd.CommandText = @"  
                                     SELECT 
 	                                    Count(U.[UpdateID])
-                                    FROM [dbo].[tbXml] x
-                                    JOIN [dbo].[tbRevision] R ON x.RevisionID = R.RevisionID
-                                    JOIN [dbo].[tbUpdate] U ON U.LocalUpdateID = R.LocalUpdateID
-                                    where 
+                                    FROM [dbo].[tbPreComputedLocalizedProperty] x
+                                    JOIN [dbo].[tbUpdate] U ON U.UpdateID = X.UpdateID
+                                    JOIN [dbo].[tbRevision] R ON U.LocalUpdateID = R.LocalUpdateID AND  X.RevisionID = R.RevisionID
+									where 
                                     -- If its hidden, its already declined
                                     U.IsHidden = 0
                                     AND

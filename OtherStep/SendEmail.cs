@@ -44,7 +44,7 @@ namespace WSUSMaintenance.OtherStep
                 var mailMessage = new MimeMessage();
                 mailMessage.From.Add(new MailboxAddress(emailSettings.SmtpUserDisplayName, emailSettings.SmtpUserMailAddress));
                 mailMessage.To.Add(new MailboxAddress(recipient, recipient));
-                mailMessage.Subject = "WSUS Maintenance Log";
+                mailMessage.Subject = string.Format("WSUS Maintenance Log - {0}", config.Server.ServerName);
                 mailMessage.Body = new TextPart("plain")
                 {
                     Text = emailBody

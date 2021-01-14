@@ -115,6 +115,11 @@ namespace WSUSMaintenance.DbStep
         }
         public bool ShouldRun()
         {
+            if (!wsusConfig.Steps.DatabaseSteps["CompressUpdates"])
+            {
+                return false;
+            }
+
             return true;
         }
 

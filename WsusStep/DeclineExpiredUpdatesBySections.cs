@@ -11,11 +11,11 @@ using WSUSMaintenance.NerdleConfigs;
 
 namespace WSUSMaintenance.WsusStep
 {
-    public class DeclineSupersededUpdates : WsusStep
+    public class DeclineExpiredUpdatesBySections : WsusStep
     {
         public override bool ShouldRun()
         {
-            if (!wsusConfig.Steps.WsusSteps["DeclineSupersededUpdates"])
+            if (!wsusConfig.Steps.WsusSteps["DeclineExpiredUpdatesBySections"])
             {
                 return false;
             }
@@ -32,6 +32,7 @@ namespace WSUSMaintenance.WsusStep
             var segmentSize = TimeSpan.FromDays(31);
             var startDate = new DateTime(2015, 1, 1);
             var wsusServer = GetAdminConsole();
+
             var messages = new Dictionary<ResultMessageType, IList<string>>();
 
 
@@ -43,28 +44,28 @@ namespace WSUSMaintenance.WsusStep
                 // searchScope.ApprovedStates = ApprovedStates.NotApproved | ApprovedStates.LatestRevisionApproved | ApprovedStates.HasStaleUpdateApprovals;
                 if (segmentDeclines)
                 {
-                    Console.WriteLine("Declining Superseded Update - By Sections");
+                    Console.WriteLine("Declining Expired Update - By Sections");
 
                     // All Updates By Week
                     var currentDate = startDate;
                     while (currentDate < DateTime.Now)
                     {
-                        Console.WriteLine("Declining Superseded Update Segment- {0} - {1}", currentDate.ToString("yyyy-MM-dd"), currentDate.Add(segmentSize).ToString("yyyy-MM-dd"));
+                        Console.WriteLine("Declining Expired Update Segment- {0} - {1}", currentDate.ToString("yyyy-MM-dd"), currentDate.Add(segmentSize).ToString("yyyy-MM-dd"));
                         try
                         {
                             searchScope.FromCreationDate = currentDate;
                             // I Dont Know if the to/from is inclusive, so to ensure we cover that date, add 1 Day to the To
                             searchScope.ToCreationDate = currentDate.Add(segmentSize).AddDays(1);
                             var allUpdates = wsusServer.GetUpdates(searchScope);
-                            foreach (var update in allUpdates.Cast<IUpdate>().Where(u => !u.IsDeclined).ToList())
+                            foreach (var update in allUpdates.Cast<IUpdate>().Where(u => u.PublicationState == PublicationState.Expired && !u.IsDeclined).ToList())
                             {
-                                if (!update.IsDeclined && update.IsSuperseded)
+                                //if (!update.IsDeclined && update.PublicationState == PublicationState.Expired)
                                 {
                                     if (update.CreationDate < DateTime.UtcNow.Add(exclusionPeriod))
                                     {
                                         try
                                         {
-                                            Console.WriteLine("Declining Superseded Update - {0}", update.Description);
+                                            Console.WriteLine("Declining Expired Update - {0}", update.Description);
                                             update.Decline();
                                         }
                                         catch (Exception e)
@@ -87,18 +88,18 @@ namespace WSUSMaintenance.WsusStep
                 else
                 {
                     // All Updates
-                    Console.WriteLine("Declining Superseded Update - All");
+                    Console.WriteLine("Declining Expired Update - All");
 
                     var allUpdates = wsusServer.GetUpdates(searchScope);
                     foreach (var update in allUpdates.Cast<IUpdate>().Where(u => !u.IsDeclined).ToList())
                     {
-                        if (!update.IsDeclined && update.IsSuperseded)
+                        if (!update.IsDeclined && update.PublicationState == PublicationState.Expired)
                         {
                             if (update.CreationDate < DateTime.UtcNow.Add(exclusionPeriod))
                             {
                                 try
                                 {
-                                    Console.WriteLine("Declining Superseded Update - {0}", update.Description);
+                                    Console.WriteLine("Declining Expired Update - {0}", update.Description);
                                     update.Decline();
                                 }
                                 catch (Exception e)

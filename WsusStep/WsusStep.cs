@@ -7,26 +7,33 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using WSUSMaintenance.NerdleConfigs;
 
 namespace WSUSMaintenance.WsusStep
 {
-    [Obsolete("Kept For Future code Reference")]
-    public class DeclineExpiredUpdatesWSUS //: IStep
+    public abstract class WsusStep : IStep
     {
-        public bool ShouldRun(SqlConnection dbConnection)
+        protected WsusMaintenanceConfiguration wsusConfig { get; set; }
+
+        public event WriteLogLineHandler WriteLog;
+
+        // public abstract event WriteLogLineHandler WriteLog;
+
+        public void SetConfig(WsusMaintenanceConfiguration config)
         {
-            return true;
+            wsusConfig = config;
         }
 
-        // WSUS Code based on https://github.com/proxb/PoshWSUS
-        // WSUS Decline based on PS script https://docs.microsoft.com/en-us/troubleshoot/mem/configmgr/wsus-maintenance-guide
-        public Result Run(SqlConnection dbConnection)
+        // public abstract bool ShouldRun();
+        //public abstract Result Run();
+
+        public IUpdateServer GetAdminConsole()
         {
-            Console.WriteLine("Connecting to WSUS AdminProxy");
-            var serverName = "localhost";
-            var useSSL = false;
-            var port = 8530;
+            var serverName = wsusConfig.Server?.ServerName;
+            var useSSL = wsusConfig.Server?.UseSSL??true;
+            var port = wsusConfig.Server?.ServerPort ?? 8530;
             var exclusionPeriod = TimeSpan.FromDays(10);
+            
             //var sslPort = 8531;
 
             LoadDlls();
@@ -38,34 +45,10 @@ namespace WSUSMaintenance.WsusStep
                 throw new Exception("failed to connect to WSUS Server");
             }
 
-            var messages = new Dictionary<ResultMessageType, IList<string>>();
-
-            try
-            {
-                Console.WriteLine("Declining Expired Updates via Admin Proxy");
-                var clnUpMngr = WsusServer.GetCleanupManager();
-                var scope = new CleanupScope()
-                {
-                    DeclineExpiredUpdates = true
-                };
-                clnUpMngr.ProgressHandler += ClnUpMngr_ProgressHandler;
-                clnUpMngr.PerformCleanup(scope);
-                return new Result(true, messages);
-            }
-            catch (Exception e)
-            {
-                // Failed to decline update, should log it
-                messages.Add(ResultMessageType.Error, new List<string>() { e.Message, e.InnerException?.Message });
-                return new Result(false, messages);
-            }
+            return WsusServer;
         }
 
-        private void ClnUpMngr_ProgressHandler(object sender, CleanupEventArgs e)
-        {
-            Console.WriteLine("{0} - {1} - {2}", e.ProgressInfo, e.CurrentProgress, e.UpperProgressBound);
-        }
-
-        private void LoadDlls()
+        protected void LoadDlls()
         {
             if (AppDomain.CurrentDomain.GetAssemblies().Select(i => i.GetName()).Where(n => n.Name == "Microsoft.UpdateServices.Administration").Any())
             {
@@ -95,5 +78,16 @@ namespace WSUSMaintenance.WsusStep
                 throw new System.IO.FileLoadException("Failed to Load WSUS Assemblies");
             }
         }
+
+        protected void WriteLine(string format, params object[] values)
+        {
+            if (WriteLog != null)
+            {
+                WriteLog(format, values);
+            }
+        }
+
+        public abstract bool ShouldRun();
+        public abstract Result Run();
     }
 }

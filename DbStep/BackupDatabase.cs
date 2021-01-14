@@ -140,6 +140,11 @@ namespace WSUSMaintenance.DbStep
 
         public bool ShouldRun()
         {
+            if (!wsusConfig.Steps.DatabaseSteps["BackupDatabase"])
+            {
+                return false;
+            }
+
             if (!wsusConfig?.Database?.BackupFirst ?? true)
             {
                 return false;

@@ -56,13 +56,15 @@ namespace WSUSMaintenance.DbStep
 
         public bool ShouldRun()
         {
+            if (!wsusConfig.Steps.DatabaseSteps["DeclineExpiredUpdates"])
+            {
+                return false;
+            }
+
             return true;
         }
 
-        public Result Run(SqlConnection sqlConnection, SqlTransaction sqlTransaction)
-        {
-            throw new NotImplementedException();
-        }
+     
         public event WriteLogLineHandler WriteLog;
 
         private void WriteLine(string format, params object[] values)

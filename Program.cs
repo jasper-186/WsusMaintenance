@@ -17,9 +17,10 @@ namespace WSUSMaintenance
         {
             var steps = new IStep[]
             {
+                // Database Steps
                 new BackupDatabase(),
                 new MsftRecommendedIndexes(),
-                new InstallFullTextSearch(),
+                new InstallFullTextSearches(),
                 new DeclineSupersededUpdates(),
                 new DeclineExpiredUpdates(),
                 new DeclineItaniumUpdates(),
@@ -31,6 +32,16 @@ namespace WSUSMaintenance
                 new CleanupUnneededContentFiles(),
                 new CompressUpdates(),
                 new OptimizeDatabase(),
+
+                // WSUS Steps
+                new WsusStep.DeclineSupersededUpdates(),
+                new WsusStep.DeclineExpiredUpdates(),
+                new WsusStep.DeclineExpiredUpdatesBySections(),                
+                new WsusStep.CleanupObsoleteUpdates(),
+                new WsusStep.CleanupObsoleteComputers(),
+                new WsusStep.CleanupUnneededContentFiles(),
+                new WsusStep.CompressUpdates(),
+
             };
 
             var wsusConfig = Nerdle.AutoConfig.AutoConfig.Map<NerdleConfigs.WsusMaintenanceConfiguration>();

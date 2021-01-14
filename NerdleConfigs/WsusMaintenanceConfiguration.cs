@@ -9,7 +9,9 @@ namespace WSUSMaintenance.NerdleConfigs
     public class WsusMaintenanceConfiguration
     {
         //public string WsusDBConnectionString { get; set; }
-        public string WsusServerFQDN { get; set; }
+        //public string WsusServerFQDN { get; set; }
+        public WsusServerConfig Server { get; set; }
+        public WsusStepConfiguration Steps { get; set; }
         public DatabaseConfiguration Database { get; set; }
         public SmtpConfiguration Smtp { get; set; }
     }

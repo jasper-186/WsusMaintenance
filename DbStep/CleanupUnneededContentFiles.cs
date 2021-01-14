@@ -54,8 +54,14 @@ namespace WSUSMaintenance.DbStep
 
         public bool ShouldRun()
         {
+            if (!wsusConfig.Steps.DatabaseSteps["CleanupUnneededContentFiles"])
+            {
+                return false;
+            }
+
             return true;
         }
+
         public event WriteLogLineHandler WriteLog;
 
         private void WriteLine(string format, params object[] values)

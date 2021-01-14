@@ -60,7 +60,8 @@ namespace WSUSMaintenance.DbStep
                     }
 
                     WriteLine("Execution Delete on {0} Updates", ObsoleteUpdateList.Count);
-
+                    WriteLine("First pass - 5 Min Timeout", ObsoleteUpdateList.Count);
+                    var troublesomeUpdates = new List<int>();
                     for (var i = 0; i < ObsoleteUpdateList.Count; i++)
                     {
                         try
@@ -71,14 +72,60 @@ namespace WSUSMaintenance.DbStep
                             deleteCmd.CommandText = "EXEC spDeleteUpdate @localUpdateID";
 
                             // it shouldn't take 2 Hours to delete an update, so its probaby deadlocked somewhere
+                            deleteCmd.CommandTimeout = (int)TimeSpan.FromMinutes(5).TotalSeconds;
+                            deleteCmd.Parameters.Add(new SqlParameter("@localUpdateID", update));
+                            //deleteCmd.CommandType = System.Data.CommandType.StoredProcedure;
+                            deleteCmd.ExecuteNonQuery();
+                        }
+                        catch (Microsoft.Data.SqlClient.SqlException e)
+                        {
+                            if (e.Message.Contains("Timeout Expired"))
+                            {
+                                troublesomeUpdates.Add(ObsoleteUpdateList[i]);
+                                WriteLine("Failed to Delete Update {0} - 5 Min Timeout Expired; Adding to extend timeout List, and Moving on", ObsoleteUpdateList[i]);
+                            }
+                            else
+                            {
+                                WriteLine("Failed to Delete Update {0} - SQLException Arose during Delete {1}", ObsoleteUpdateList[i], e.Message);
+                            }
+                        }
+                        catch (TimeoutException)
+                        {
+                            troublesomeUpdates.Add(ObsoleteUpdateList[i]);
+                            WriteLine("Failed to Delete Update {0} - 5 Min Timeout Expired; Adding to extend timeout List, and Moving on", ObsoleteUpdateList[i]);
+                        }
+                    }
+
+                    WriteLine("Second pass - 2 Hour Timeout - {0} Updates", troublesomeUpdates.Count);
+                    for (var i = 0; i < troublesomeUpdates.Count; i++)
+                    {
+                        try
+                        {
+                            var update = troublesomeUpdates[i];
+                            WriteLine("Deleting Obsolete Update {0} - {1}/{2}", update, (i + 1), troublesomeUpdates.Count);
+                            var deleteCmd = dbconnection.CreateCommand();
+                            deleteCmd.CommandText = "EXEC spDeleteUpdate @localUpdateID";
+
+                            // it shouldn't take 2 Hours to delete an update, so its probaby deadlocked somewhere
                             deleteCmd.CommandTimeout = (int)TimeSpan.FromHours(2).TotalSeconds;
                             deleteCmd.Parameters.Add(new SqlParameter("@localUpdateID", update));
                             //deleteCmd.CommandType = System.Data.CommandType.StoredProcedure;
                             deleteCmd.ExecuteNonQuery();
                         }
+                        catch (Microsoft.Data.SqlClient.SqlException e)
+                        {
+                            if (e.Message.Contains("Timeout Expired"))
+                            {
+                                WriteLine("Failed to Delete Update {0} - 2 Hour Timeout Expired; Moving on", troublesomeUpdates[i]);
+                            }
+                            else
+                            {
+                                WriteLine("Failed to Delete Update {0} - SQLException Arose during Delete {1}", troublesomeUpdates[i], e.Message);
+                            }
+                        }
                         catch (TimeoutException)
                         {
-                            WriteLine("Failed to Delete Update {0} - 2 Hour Timeout Expired; Moving on", ObsoleteUpdateList[i]);
+                            WriteLine("Failed to Delete Update {0} - 2 Hour Timeout Expired; Moving on", troublesomeUpdates[i]);
                         }
                     }
                 }
@@ -95,8 +142,14 @@ namespace WSUSMaintenance.DbStep
 
         public bool ShouldRun()
         {
+            if (!wsusConfig.Steps.DatabaseSteps["CleanupObsoleteUpdates"])
+            {
+                return false;
+            }
+
             return true;
         }
+
         public event WriteLogLineHandler WriteLog;
 
         private void WriteLine(string format, params object[] values)

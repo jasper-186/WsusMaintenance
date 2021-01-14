@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WSUSMaintenance.Helpers;
 using WSUSMaintenance.NerdleConfigs;
 
 namespace WSUSMaintenance.DbStep
@@ -39,20 +40,22 @@ namespace WSUSMaintenance.DbStep
                     {
                         WriteLine($"DeclineItaniumUpdates - TSQL - {e.Source}-{e.Message}");
                     };
+
                     dbconnection.Open();
+                    var whereClause = FullTextWhereHelper.GetWhereClause(dbconnection, WhereClauseJoiner.OR, "Title", "Itanium", "ia64");
                     var cmd = dbconnection.CreateCommand();
                     cmd.CommandText = @"  
                                         SELECT 
 	                                        Distinct
-	                                        U.[UpdateID]     
-                                        FROM [dbo].[tbXml] x
-                                        JOIN [dbo].[tbRevision] R ON x.RevisionID = R.RevisionID
-                                        JOIN [dbo].[tbUpdate] U ON U.LocalUpdateID = R.LocalUpdateID
-                                        where 
+	                                        X.[UpdateID]     
+                                        FROM [dbo].[tbPreComputedLocalizedProperty] x
+                                        JOIN [dbo].[tbUpdate] U ON U.UpdateID = X.UpdateID
+                                        JOIN [dbo].[tbRevision] R ON U.LocalUpdateID = R.LocalUpdateID AND  X.RevisionID = R.RevisionID
+									    WHERE 
                                         -- If its hidden, its already declined
                                         U.IsHidden = 0
                                         AND
-                                        (Contains(RootElementXml,'Itanium') OR Contains(RootElementXml,'ia64'))";
+                                        " + whereClause;
                     cmd.CommandTimeout = 0;
                     var itaniumUpdatesList = new List<System.Guid>();
                     using (var reader = cmd.ExecuteReader())
@@ -110,6 +113,11 @@ namespace WSUSMaintenance.DbStep
 
         public bool ShouldRun()
         {
+            if (!wsusConfig.Steps.DatabaseSteps["DeclineItaniumUpdates"])
+            {
+                return false;
+            }
+
             using (var dbconnection = new SqlConnection(wsusConfig.Database.ConnectionString))
             {
                 dbconnection.InfoMessage += (sender, e) =>
@@ -118,18 +126,20 @@ namespace WSUSMaintenance.DbStep
                 };
 
                 dbconnection.Open();
+                var whereClause = FullTextWhereHelper.GetWhereClause(dbconnection, WhereClauseJoiner.OR, "Title", "Itanium", "ia64");
                 var cmd = dbconnection.CreateCommand();
                 cmd.CommandText = @"  
                                     SELECT 
-	                                    Count(U.[UpdateID])
-                                    FROM [dbo].[tbXml] x
-                                    JOIN [dbo].[tbRevision] R ON x.RevisionID = R.RevisionID
-                                    JOIN [dbo].[tbUpdate] U ON U.LocalUpdateID = R.LocalUpdateID
-                                    where 
+	                                    TOP 1
+                                        1 as Count
+                                    FROM [dbo].[tbPreComputedLocalizedProperty] x
+                                    JOIN [dbo].[tbUpdate] U ON U.UpdateID = X.UpdateID
+                                    JOIN [dbo].[tbRevision] R ON U.LocalUpdateID = R.LocalUpdateID AND  X.RevisionID = R.RevisionID
+									where 
                                     -- If its hidden, its already declined
                                     U.IsHidden = 0
                                     AND
-                                    (Contains(RootElementXml,'Itanium') OR Contains(RootElementXml,'ia64'))";
+                                    " + whereClause;
                 cmd.CommandTimeout = 0;
                 var result = Convert.ToInt32(cmd.ExecuteScalar());
                 return result > 0;
@@ -145,7 +155,7 @@ namespace WSUSMaintenance.DbStep
                 WriteLog(format, values);
             }
         }
-        
+
         public Result Run(SqlConnection sqlConnection, SqlTransaction sqlTransaction)
         {
             throw new NotImplementedException();

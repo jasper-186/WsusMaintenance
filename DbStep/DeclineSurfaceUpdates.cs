@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WSUSMaintenance.Helpers;
 using WSUSMaintenance.NerdleConfigs;
 
 namespace WSUSMaintenance.DbStep
@@ -37,24 +38,22 @@ namespace WSUSMaintenance.DbStep
                 {
                     dbconnection.InfoMessage += (sender, e) =>
                     {
-                        WriteLine($"DeclineItaniumUpdates - TSQL - {e.Source}-{e.Message}");
+                        WriteLine($"DeclineSurfaceUpdates - TSQL - {e.Source}-{e.Message}");
                     };
                     dbconnection.Open();
+                    var whereClause = FullTextWhereHelper.GetWhereClause(dbconnection, WhereClauseJoiner.AND, "Title", "Microsoft", "Surface");
                     var cmd = dbconnection.CreateCommand();
                     cmd.CommandText = @"  
                                         SELECT 
 	                                        Distinct
 	                                        U.[UpdateID]     
-                                        FROM [dbo].[tbXml] x
-                                        JOIN [dbo].[tbRevision] R ON x.RevisionID = R.RevisionID
-                                        JOIN [dbo].[tbUpdate] U ON U.LocalUpdateID = R.LocalUpdateID
-                                        where 
+                                        FROM [dbo].[tbPreComputedLocalizedProperty] x
+                                        JOIN [dbo].[tbUpdate] U ON U.UpdateID = X.UpdateID
+                                        JOIN [dbo].[tbRevision] R ON U.LocalUpdateID = R.LocalUpdateID AND  X.RevisionID = R.RevisionID
+									     where 
                                         -- If its hidden, its already declined
                                         U.IsHidden = 0
-                                        AND
-                                        Contains(RootElementXml,'Microsoft') 
-                                        AND
-                                        Contains(RootElementXml,'Surface')";
+                                        AND" + whereClause;
                     cmd.CommandTimeout = 0;
                     var itaniumUpdatesList = new List<System.Guid>();
                     using (var reader = cmd.ExecuteReader())
@@ -82,7 +81,7 @@ namespace WSUSMaintenance.DbStep
                         try
                         {
                             var update = itaniumUpdatesList[i];
-                            WriteLine("Decline Update {0} - {1}/{2}", update, (i + 1), itaniumUpdatesList.Count);
+                            WriteLine("Decline Surface Update {0} - {1}/{2}", update, (i + 1), itaniumUpdatesList.Count);
                             var declineCmd = dbconnection.CreateCommand();
                             declineCmd.CommandText = "EXEC spDeclineUpdate @updateID, @adminName";
 
@@ -112,34 +111,40 @@ namespace WSUSMaintenance.DbStep
 
         public bool ShouldRun()
         {
+            if (!wsusConfig.Steps.DatabaseSteps["DeclineSurfaceUpdates"])
+            {
+                return false;
+            }
+
             using (var dbconnection = new SqlConnection(wsusConfig.Database.ConnectionString))
             {
                 dbconnection.InfoMessage += (sender, e) =>
                 {
-                    WriteLine($"DeclineItaniumUpdates - TSQL - {e.Source}-{e.Message}");
+                    WriteLine($"DeclineSurfaceUpdates - TSQL - {e.Source}-{e.Message}");
                 };
 
                 dbconnection.Open();
+                var whereClause = FullTextWhereHelper.GetWhereClause(dbconnection, WhereClauseJoiner.AND, "Title", "Microsoft", "Surface");
+
                 var cmd = dbconnection.CreateCommand();
                 cmd.CommandText = @"  
                                     SELECT 
-	                                    Count(U.[UpdateID])
-                                    FROM [dbo].[tbXml] x
-                                    JOIN [dbo].[tbRevision] R ON x.RevisionID = R.RevisionID
-                                    JOIN [dbo].[tbUpdate] U ON U.LocalUpdateID = R.LocalUpdateID
-                                    where 
+	                                    TOP 1
+                                        1 as Count
+                                    FROM [dbo].[tbPreComputedLocalizedProperty] x
+                                    JOIN [dbo].[tbUpdate] U ON U.UpdateID = X.UpdateID
+                                    JOIN [dbo].[tbRevision] R ON U.LocalUpdateID = R.LocalUpdateID AND  X.RevisionID = R.RevisionID
+									where 
                                     -- If its hidden, its already declined
                                     U.IsHidden = 0
                                     AND
-                                    Contains(RootElementXml,'Microsoft') 
-                                    AND
-                                    Contains(RootElementXml,'Surface')";
+                                    " + whereClause;
                 cmd.CommandTimeout = 0;
                 var result = Convert.ToInt32(cmd.ExecuteScalar());
                 return result > 0;
             }
         }
-        
+
         public event WriteLogLineHandler WriteLog;
 
         private void WriteLine(string format, params object[] values)
