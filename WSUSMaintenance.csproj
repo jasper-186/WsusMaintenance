@@ -59,6 +59,8 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DbStep\SetManualSyncronizationSchedule.cs" />
+    <Compile Include="DbStep\DbStepTemplate.cs" />
     <Compile Include="DbStep\DeclineSurfaceUpdates.cs" />
     <Compile Include="DbStep\DeclinePreviewUpdates.cs" />
     <Compile Include="DbStep\DeclineLanguageFeatureonDemandUpdates.cs" />

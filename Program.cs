@@ -18,6 +18,7 @@ namespace WSUSMaintenance
             var steps = new IStep[]
             {
                 // Database Steps
+                new SetManualSyncronizationSchedule(),
                 new BackupDatabase(),
                 new MsftRecommendedIndexes(),
                 new InstallFullTextSearches(),
@@ -36,7 +37,7 @@ namespace WSUSMaintenance
                 // WSUS Steps
                 new WsusStep.DeclineSupersededUpdates(),
                 new WsusStep.DeclineExpiredUpdates(),
-                new WsusStep.DeclineExpiredUpdatesBySections(),                
+                new WsusStep.DeclineExpiredUpdatesBySections(),
                 new WsusStep.CleanupObsoleteUpdates(),
                 new WsusStep.CleanupObsoleteComputers(),
                 new WsusStep.CleanupUnneededContentFiles(),
@@ -88,6 +89,10 @@ namespace WSUSMaintenance
                                 }
 
                                 throw new InvalidOperationException(messages.FirstOrDefault() ?? "Exception During Step");
+                            }
+                            else
+                            {
+                                log.Information("Step {0}/{1} Completed - {2}", (i + 1), steps.Length, steps[i].GetType().Name);
                             }
                         }
                         else
